@@ -1,0 +1,18 @@
+{
+  "name": "portal-base-dashboard",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Radar de oportunidades de contratos públicos de TI em Portugal",
+  "scripts": {
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "e2e": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "@vitest/coverage-v8": "^4.1.11",
+    "http-server": "^14.1.1",
+    "jsdom": "^29.1.1",
+    "vitest": "^4.1.11"
+  }
+}

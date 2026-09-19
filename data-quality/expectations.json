@@ -1,0 +1,9 @@
+[
+  { "type": "minCount", "value": 5 },
+  { "type": "maxCount", "value": 2000 },
+  { "type": "nonNull", "field": "id" },
+  { "type": "unique", "field": "id" },
+  { "type": "nonNull", "field": "title" },
+  { "type": "nonNull", "field": "entity" },
+  { "type": "regex", "field": "id", "pattern": "^\\d+$" }
+]

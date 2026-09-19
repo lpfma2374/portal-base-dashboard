@@ -1,0 +1,144 @@
+# PortalBaseDashboard — pipeline de qualidade (custo zero, plano free)
+#   Vitest → Playwright → ZAP (DAST) + Lighthouse CI (v2: + gitleaks + Semgrep)
+# E2E correm contra build local (site estático via `http-server`) com o proxy
+# /api/announcements e /api/stats mockados por fixtures: a D1 nunca é chamada do CI.
+# DAST (ZAP baseline) e budgets de performance (Lighthouse CI) correm também
+# contra o build local — nenhum tráfego de teste toca em produção.
+# Escritas na D1 fazem-se pelo agente de monitorização, nunca no CI.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  testes-unitarios:
+    name: Testes unitários (Vitest)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run test:coverage
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage/
+          retention-days: 3
+
+  testes-funcionais:
+    name: Testes funcionais (Playwright)
+    needs: testes-unitarios
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npx playwright test
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 3
+
+  dast-zap:
+    name: DAST (OWASP ZAP Baseline)
+    needs: testes-unitarios
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Servir build local
+        run: |
+          npx http-server . -p 4173 --silent &
+          echo $! > server.pid
+          sleep 3
+          curl -sf http://127.0.0.1:4173/ > /dev/null
+      - name: ZAP Baseline Scan (passivo, build local)
+        run: |
+          docker run --rm --network host             --user 0:0             -v "$PWD:/zap/wrk/:rw"             ghcr.io/zaproxy/zaproxy:stable             zap-baseline.py -t http://127.0.0.1:4173               -c ci-cd/zap-rules.conf               -I               -r zap-report.html
+      - name: Upload do relatório ZAP
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-report
+          path: zap-report.html
+          retention-days: 7
+          if-no-files-found: ignore
+
+  performance-lighthouse:
+    name: Performance (Lighthouse CI)
+    needs: testes-unitarios
+    runs-on: ubuntu-latest
+    env:
+      CHROME_PATH: /usr/bin/google-chrome
+      LHCI_NAME: portal-base-dashboard
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Servir build local
+        run: |
+          npx http-server . -p 4173 --silent &
+          echo $! > server.pid
+          sleep 3
+          curl -sf http://127.0.0.1:4173/ > /dev/null
+      - name: Lighthouse CI (budgets de performance)
+        run: npx -y @lhci/cli autorun --config=ci-cd/lighthouserc.json
+
+  # --- v2 (17/09/2026): deteção de segredos no histórico e no diff do PR ---
+  # Zero contas externas: usa o GITHUB_TOKEN auto-provisionado.
+  # Partilhado com o template lpfma2374/ci-cd-template.
+  gitleaks:
+    name: Segredos (gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # --- v2.1 (17/09/2026): SAST com Semgrep OSS (substituto do CodeQL em repos privados) ---
+  # Code scanning em repos privados de conta pessoal exige GitHub Advanced Security
+  # (produto de organização, pago). O Semgrep OSS cobre SAST a custo zero e sem conta
+  # externa. Gate: falha apenas em findings severity=ERROR (regras OWASP Top 10 +
+  # JavaScript). WARNINGs ficam informativos (ex.: mutable action tags).
+  # Partilhado com o template lpfma2374/ci-cd-template.
+  sast-semgrep:
+    name: SAST (Semgrep OSS)
+    runs-on: ubuntu-latest
+    env:
+      SEMGREP_SEND_METRICS: "off"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: pip install semgrep
+      - name: Semgrep — inventário completo (não bloqueia)
+        run: semgrep scan --config p/owasp-top-ten --config p/javascript --quiet
+      - name: Semgrep — gate (falha em findings ERROR)
+        run: semgrep scan --config p/owasp-top-ten --config p/javascript --severity ERROR --error

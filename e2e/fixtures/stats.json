@@ -1,0 +1,18 @@
+{
+    "total": 17,
+    "sent": 0,
+    "unsent": 17,
+    "archived": 0,
+    "emails_ok": 0,
+    "emails_not_ok": 0,
+    "last_digest": {
+        "date": "2026-09-19",
+        "candidates": 17,
+        "new_announcements": 17,
+        "emailed": 0,
+        "email_sent": "no",
+        "notes": "D1 portal-base-monitor inicializada; 17 anuncios de 18/09 importados como pendentes (serao enviados no digest de segunda-feira 21/09)",
+        "created_at": "2026-09-19T12:07:46Z"
+    },
+    "recent_emails": []
+}

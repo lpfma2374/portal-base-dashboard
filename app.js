@@ -1,5 +1,6 @@
 (function () {
-  let allAnnouncements = [];
+  let allAnnouncements = [];   // active dataset (default)
+  let archivedAnnouncements = null; // lazy-loaded when filter = arquivados
   let filtered = [];
 
   const grid = document.getElementById('annGrid');
@@ -54,6 +55,7 @@
         fetch('/api/announcements'),
         fetch('/api/stats'),
       ]);
+      archivedAnnouncements = null; // force refetch of archived if selected later
       const ann = await annRes.json();
       const stats = await statsRes.json();
 
@@ -95,6 +97,14 @@
     const tipo = filterTipo.value;
     const sort = sortBy.value;
 
+    if (estado === 'arquivados') {
+      if (archivedAnnouncements) renderArchived(q, tipo, sort);
+      else fetch('/api/announcements?status=archived')
+        .then((r) => r.json())
+        .then((d) => { archivedAnnouncements = d.announcements || []; renderArchived(q, tipo, sort); });
+      return;
+    }
+
     filtered = allAnnouncements.filter((a) => {
       if (estado === 'pendente' && a.digest_date) return false;
       if (estado === 'enviado' && !a.digest_date) return false;
@@ -118,8 +128,26 @@
     render();
   }
 
+  function renderArchived(q, tipo, sort) {
+    let rows = archivedAnnouncements.filter((a) => {
+      if (tipo !== 'todos' && a.type !== tipo) return false;
+      if (q) {
+        const hay = [a.title, a.entity, a.cpv, a.announcement_number]
+          .filter(Boolean).join(' ').toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+    if (sort === 'valor') rows.sort((x, y) => parsePrice(y.base_price) - parsePrice(x.base_price));
+    else if (sort === 'entidade') rows.sort((x, y) => String(x.entity || '').localeCompare(String(y.entity || ''), 'pt'));
+    else rows.sort((x, y) => parsePubDate(y.pub_date) - parsePubDate(x.pub_date));
+    filtered = rows;
+    render();
+  }
+
   // ---------- Render ----------
   function card(a) {
+    const archived = a.status === 'Archived';
     const sent = !!a.digest_date;
     const reasons = reasonTags(a);
     const price = a.base_price && String(a.base_price).trim()
@@ -139,8 +167,8 @@
             <h3 class="ann-title">${esc(a.title)}</h3>
             <div class="ann-entity">${esc(a.entity || '—')}</div>
           </div>
-          <span class="status-pill ${sent ? 'status-enviado' : 'status-pendente'}">
-            ${sent ? 'Enviado ' + esc(a.digest_date) : 'Pendente'}
+          <span class="status-pill ${archived ? 'status-arquivado' : sent ? 'status-enviado' : 'status-pendente'}">
+            ${archived ? 'Arquivado' : sent ? 'Enviado ' + esc(a.digest_date) : 'Pendente'}
           </span>
         </div>
         ${price}

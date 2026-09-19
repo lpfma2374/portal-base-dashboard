@@ -29,11 +29,19 @@ async function d1Query(sql, params) {
 export default async function handler(req, res) {
   try {
     const limit = Math.min(parseInt(req.query.limit || '300', 10) || 300, 1000);
+    // status=active (default) | archived | all
+    const status = String(req.query.status || 'active').toLowerCase();
+    const where = status === 'archived'
+      ? "WHERE status = 'Archived'"
+      : status === 'all'
+        ? ''
+        : "WHERE COALESCE(status, 'Active') = 'Active'";
     const rows = await d1Query(
       `SELECT id, title, entity, type, base_price, cpv, deadline, pub_date,
               announcement_number, detail_url, pecas_url, relevance_reasons,
-              first_seen, last_seen, digest_date
+              first_seen, last_seen, digest_date, status, archived_date
        FROM announcements
+       ${where}
        ORDER BY last_seen DESC
        LIMIT ?`,
       [limit]

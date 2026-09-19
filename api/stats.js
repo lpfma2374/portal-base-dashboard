@@ -27,10 +27,11 @@ async function d1Query(sql, params) {
 
 export default async function handler(req, res) {
   try {
-    const [t, s, u, eok, enok, lastDigest, recentEmails] = await Promise.all([
+    const [t, s, u, arch, eok, enok, lastDigest, recentEmails] = await Promise.all([
       d1Query('SELECT COUNT(*) AS c FROM announcements'),
       d1Query("SELECT COUNT(*) AS c FROM announcements WHERE digest_date IS NOT NULL"),
-      d1Query('SELECT COUNT(*) AS c FROM announcements WHERE digest_date IS NULL'),
+      d1Query("SELECT COUNT(*) AS c FROM announcements WHERE digest_date IS NULL AND COALESCE(status,'Active')='Active'"),
+      d1Query("SELECT COUNT(*) AS c FROM announcements WHERE status='Archived'"),
       d1Query("SELECT COUNT(*) AS c FROM email_log WHERE status='OK'"),
       d1Query("SELECT COUNT(*) AS c FROM email_log WHERE status='NOT_OK'"),
       d1Query('SELECT * FROM digest_log ORDER BY date DESC LIMIT 1'),
@@ -42,6 +43,7 @@ export default async function handler(req, res) {
       total: t[0].c,
       sent: s[0].c,
       unsent: u[0].c,
+      archived: arch[0].c,
       emails_ok: eok[0].c,
       emails_not_ok: enok[0].c,
       last_digest: lastDigest[0] || null,

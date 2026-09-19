@@ -256,6 +256,7 @@ select {
 }
 .status-pendente { background: var(--accent-soft); color: var(--accent-dark); }
 .status-enviado { background: var(--green-soft); color: var(--green); }
+.status-arquivado { background: #ebebed; color: var(--text-soft); }
 
 .ann-price {
   font-size: 22px;

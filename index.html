@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Portal Base Monitor — Contratos públicos de TI</title>
+  <meta name="description" content="Radar de oportunidades de contratos públicos de TI em Portugal. Dados via Cloudflare D1, atualização diária às 8h em dias úteis.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='24' fill='%230071e3'/><text x='50' y='68' font-size='52' font-family='-apple-system,Helvetica' fill='white' text-anchor='middle' font-weight='600'>B</text></svg>">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+  <!-- ===== Topbar ===== -->
+  <div class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <span class="brand-mark"></span>
+        <span class="brand-name">Portal Base Monitor</span>
+      </div>
+      <span class="updated-at" id="updatedAt">A carregar dados…</span>
+    </div>
+  </div>
+
+  <!-- ===== Hero ===== -->
+  <header class="hero">
+    <p class="eyebrow">Análise de contratos públicos · TI em Portugal</p>
+    <h1>Radar de oportunidades de TI</h1>
+    <p class="hero-sub">Prospeção diária de anúncios de procedimento do Portal BASE —
+      desenvolvimento aplicacional, data, BI, integrações, cloud e suporte de sistemas —
+      filtrada por relevância para serviços de TI.</p>
+
+    <div class="stat-grid" id="statGrid">
+      <div class="stat-card">
+        <div class="stat-value" id="statTotal">—</div>
+        <div class="stat-label">Anúncios registados</div>
+      </div>
+      <div class="stat-card stat-card-featured">
+        <div class="stat-value" id="statPendentes">—</div>
+        <div class="stat-label">Por enviar no próximo digest</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="statEmailsOk">—</div>
+        <div class="stat-label">Digests enviados (OK)</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="statEmailsFail">—</div>
+        <div class="stat-label">Envios falhados (NOT OK)</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== Filters ===== -->
+  <div class="filters">
+    <div class="filters-inner">
+      <div class="search-field">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input id="searchInput" type="search" placeholder="Pesquisar título, entidade, CPV…" autocomplete="off">
+      </div>
+
+      <select id="filterEstado" aria-label="Estado">
+        <option value="todos">Todos os estados</option>
+        <option value="pendente">Pendentes</option>
+        <option value="enviado">Enviados no digest</option>
+      </select>
+
+      <select id="filterTipo" aria-label="Tipo de procedimento">
+        <option value="todos">Todos os tipos</option>
+      </select>
+
+      <select id="sortBy" aria-label="Ordenar">
+        <option value="data">Ordenar: data de publicação</option>
+        <option value="valor">Ordenar: valor base (maior)</option>
+        <option value="entidade">Ordenar: entidade (A–Z)</option>
+      </select>
+
+      <button class="refresh-btn" id="refreshBtn" title="Atualizar dados (D1)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
+        Atualizar
+      </button>
+    </div>
+  </div>
+
+  <!-- ===== Data List ===== -->
+  <main class="list-section">
+    <div class="list-header">
+      <h2>Data List</h2>
+      <span class="list-count" id="listCount"></span>
+    </div>
+
+    <div class="ann-grid" id="annGrid"></div>
+
+    <div class="empty-state" id="emptyState" hidden>
+      <div class="empty-title">Sem resultados</div>
+      <div class="empty-sub">Nenhum anúncio corresponde aos filtros atuais.</div>
+    </div>
+  </main>
+
+  <!-- ===== Footer ===== -->
+  <footer class="footer">
+    <div>Portal Base Monitor · Dados via Cloudflare D1 · Edge serverless</div>
+    <div class="footer-sub">Base de dados atualizada diariamente às 08h00 (dias úteis) pelo agente de monitorização · Digest para luispedroalvim@gmail.com</div>
+  </footer>
+
+  <script src="/app.js"></script>
+</body>
+</html>
